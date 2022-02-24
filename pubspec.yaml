@@ -3,7 +3,6 @@ version: 8.5.0
 description: A complete api for audio playback and recording. Audio player, audio recorder, media player, media recorder, sound player, sound recorder.
 
 repository: https://github.com/karkakol/flutter_sound_lite
-publish_to: none
 
 environment:
   sdk: '>=2.12.0 <3.0.0'
