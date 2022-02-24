@@ -1,9 +1,8 @@
 name: flutter_sound_lite
 version: 8.5.0
 description: A complete api for audio playback and recording. Audio player, audio recorder, media player, media recorder, sound player, sound recorder.
-#author: dooboolab<dooboolab@gmail.com>
-homepage: https://flutter-sound.canardoux.xyz/readme.html
-repository: https://github.com/canardoux/flutter_sound
+
+repository: https://github.com/karkakol/flutter_sound_lite
 publish_to: none
 
 environment:
