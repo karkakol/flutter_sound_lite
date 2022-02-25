@@ -201,7 +201,6 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
             audioFlags: outputToSpeaker | allowBlueToothA2DP | allowAirPlay,
             withUI: true)
         .then((_) {
-      _setCallbacks();
       _player!.setSubscriptionDuration(Duration(milliseconds: 100));
     });
   }
