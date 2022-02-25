@@ -739,6 +739,8 @@ class _PlaybarSliderState extends State<PlaybarSlider> {
               value: disposition.position.inMilliseconds.toDouble(),
               onChanged: (value) => widget._seek(Duration(milliseconds: value.toInt())),
             );
+          }else{
+            print("1111111111111"+id + ' ' + disposition.id);
           }
 
           return Slider(
