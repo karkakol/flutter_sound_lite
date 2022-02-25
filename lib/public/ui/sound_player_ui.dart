@@ -415,8 +415,6 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
 
     _logger.d('Calling play');
 
-    await _localController.close();
-
     if (_track != null && _player!.isPlaying) {
       _logger.d('play called whilst player running. Stopping Player first.');
       await _stop();
