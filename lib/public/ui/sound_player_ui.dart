@@ -702,15 +702,17 @@ class _PlaybarSliderState extends State<PlaybarSlider> {
   final String id;
   late PlaybackDisposition prevData;
 
-  _PlaybarSliderState(this.id);
-
-  @override
-  Widget build(BuildContext context) {
+  _PlaybarSliderState(this.id){
     prevData = PlaybackDisposition(
       id: id,
       duration: Duration(seconds: 0),
       position: Duration(seconds: 0),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
     SliderThemeData? sliderThemeData;
     if (widget._sliderThemeData == null) {
       sliderThemeData = SliderTheme.of(context);
