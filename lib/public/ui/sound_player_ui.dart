@@ -185,7 +185,7 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
         _disabledIconColor = disabledIconColor,
         _sliderThemeData = sliderThemeData,
         id = id,
-        _localController = StreamController<PlaybackDisposition>() {
+        _localController = StreamController<PlaybackDisposition>.broadcast() {
 
     _sliderPosition.position = Duration(seconds: 0);
     _sliderPosition.maxPosition = Duration(seconds: 0);
@@ -232,7 +232,7 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
   @override
   Widget build(BuildContext context) {
     current.registerPlayer(context, this);
-    return ChangeNotifierProvider<_SliderPosition>(create: (_) => _sliderPosition, child: _buildPlayBar());
+    return  _buildPlayBar();
   }
 
   void _setCallbacks() {
@@ -756,7 +756,7 @@ class _PlaybarSliderState extends State<PlaybarSlider> {
 }
 
 ///
-class _SliderPosition extends ChangeNotifier {
+class _SliderPosition  {
   /// The current position of the slider.
   Duration _position = Duration.zero;
 
@@ -768,14 +768,11 @@ class _SliderPosition extends ChangeNotifier {
   ///
   set position(Duration position) {
     _position = position;
-
-    if (!_disposed) notifyListeners();
   }
 
   @override
   void dispose() {
     _disposed = true;
-    super.dispose();
   }
 
   ///
