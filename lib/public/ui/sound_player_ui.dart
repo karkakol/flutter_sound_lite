@@ -185,7 +185,7 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
         _disabledIconColor = disabledIconColor,
         _sliderThemeData = sliderThemeData,
         id = id,
-        _localController = StreamController<PlaybackDisposition>() {
+        _localController = StreamController<PlaybackDisposition>.broadcast() {
 
     _sliderPosition.position = Duration(seconds: 0);
     _sliderPosition.maxPosition = Duration(seconds: 0);
@@ -241,7 +241,9 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
     /// also wants to see these events?
 
     /// pipe the new sound players stream to our local controller.
+
     _player!.dispositionStream()!.listen(_localController.add);
+
   }
 
   void _onStopped() {
@@ -412,6 +414,8 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
     _logger.d('Loading starting');
 
     _logger.d('Calling play');
+
+    await _localController.close();
 
     if (_track != null && _player!.isPlaying) {
       _logger.d('play called whilst player running. Stopping Player first.');
