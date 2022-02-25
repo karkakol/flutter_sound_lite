@@ -185,7 +185,8 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
         _disabledIconColor = disabledIconColor,
         _sliderThemeData = sliderThemeData,
         id = id,
-        _localController = StreamController<PlaybackDisposition>.broadcast() {
+        _localController = StreamController<PlaybackDisposition>() {
+
     _sliderPosition.position = Duration(seconds: 0);
     _sliderPosition.maxPosition = Duration(seconds: 0);
     if (!_enabled!) {
