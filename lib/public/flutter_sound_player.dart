@@ -163,6 +163,7 @@ class FlutterSoundPlayer implements FlutterSoundPlayerCallback {
   /// The FlutterSoundPlayerLogger
   Logger _logger = Logger(level: Level.debug);
   Level _logLevel = Level.debug;
+  final String id;
 
   /// The FlutterSoundPlayerLogger Logger getter
   Logger get logger => _logger;
@@ -208,7 +209,7 @@ class FlutterSoundPlayer implements FlutterSoundPlayerCallback {
 
   /// Instanciate a new Flutter Sound player.
   /// The optional paramater `Level logLevel` specify the Logger Level you are interested by.
-  /* ctor */ FlutterSoundPlayer({Level logLevel = Level.debug}) {
+  /* ctor */ FlutterSoundPlayer({Level logLevel = Level.debug, required this.id}) {
     _logger = Logger(level: logLevel);
     _logger.d('ctor: FlutterSoundPlayer()');
   }
@@ -227,6 +228,7 @@ class FlutterSoundPlayer implements FlutterSoundPlayerCallback {
     }
     _playerController!.add(
       PlaybackDisposition(
+        id: id,
         position: Duration(milliseconds: position),
         duration: Duration(milliseconds: duration),
       ),
@@ -1920,10 +1922,12 @@ class PlaybackDisposition {
   /// that we are playing.
   final Duration position;
 
+  final String id;
+
   /// A convenience ctor. If you are using a stream builder
   /// you can use this to set initialData with both duration
   /// and postion as 0.
-  PlaybackDisposition.zero()
+  PlaybackDisposition.zero({required this.id})
       : position = Duration(seconds: 0),
         duration = Duration(seconds: 0);
 
@@ -1931,6 +1935,7 @@ class PlaybackDisposition {
   PlaybackDisposition({
     this.position = Duration.zero,
     this.duration = Duration.zero,
+    required this.id,
   });
 
   ///

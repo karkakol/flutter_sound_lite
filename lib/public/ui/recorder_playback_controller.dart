@@ -148,7 +148,7 @@ class _RecordPlaybackControllerState {
         (recorderDisposition) => _localController.add(PlaybackDisposition(
             // TODO ? PlaybackDispositionState.recording,
             position: Duration.zero,
-            duration: recorderDisposition.duration)));
+            duration: recorderDisposition.duration, id: '')));
   }
 }
 

@@ -187,7 +187,7 @@ class FlutterSound {
 
   /// This instance of [FlutterSoundPlayer] is just to be smart for the App.
   /// The Apps can use this instance without having to create a [FlutterSoundPlayer] themselves.
-  FlutterSoundPlayer thePlayer = FlutterSoundPlayer();
+  FlutterSoundPlayer thePlayer = FlutterSoundPlayer(id: '');
 
   /// TODO
   void internalOpenSessionForRecording() {

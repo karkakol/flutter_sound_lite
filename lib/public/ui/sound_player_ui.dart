@@ -34,11 +34,12 @@
 library ui_player;
 
 import 'dart:async';
-//import 'package:intl/intl.dart' show DateFormat;
+
+import 'recorder_playback_controller.dart' as current;
 import 'package:flutter/material.dart';
+import 'package:flutter_sound_lite/flutter_sound.dart';
 import 'package:logger/logger.dart' show Level, Logger;
 import 'package:provider/provider.dart';
-import '../../flutter_sound.dart';
 
 ///
 typedef OnLoad = Future<Track> Function(BuildContext context);
@@ -60,12 +61,11 @@ class SoundPlayerUI extends StatefulWidget {
   /// only codec support by android unless we have a minSdk of 29
   /// then OGG_VORBIS and OPUS are supported.
   static const Codec standardCodec = Codec.aacADTS;
-  static const int _barHeight = 60;
+  static const int _barHeight = 40;
 
   final OnLoad? _onLoad;
 
   final Track? _track;
-  final bool _showTitle;
 
   final bool _enabled;
 
@@ -76,25 +76,8 @@ class SoundPlayerUI extends StatefulWidget {
   final TextStyle? _titleStyle;
   final SliderThemeData? _sliderThemeData;
 
-// -----------------------------------------------------------------------------------------------------------
+  final String id;
 
-  /// [SoundPlayerUI.fromLoader] allows you to dynamically provide
-  /// a [Track] when the user clicks the play
-  /// button.
-  /// You can cancel the play action by returning
-  /// null when _onLoad is called.
-  /// [onLoad] is the function that is called when the user clicks the
-  /// play button. You return either a Track to be played or null
-  /// if you want to cancel the play action.
-  /// If [showTitle] is true (default is false) then the play bar will also
-  /// display the track name and album (if set).
-  /// If [enabled] is true (the default) then the Player will be enabled.
-  /// If [enabled] is false then the player will be disabled and the user
-  /// will not be able to click the play button.
-  /// The [audioFocus] allows you to control what happens to other
-  /// media that is playing when our player starts.
-  /// By default we use `AudioFocus.requestFocusAndDuckOthers` which will
-  /// reduce the volume of any other players.
   SoundPlayerUI.fromLoader(
     OnLoad onLoad, {
     bool showTitle = false,
@@ -105,50 +88,12 @@ class SoundPlayerUI extends StatefulWidget {
     Color disabledIconColor = Colors.grey,
     TextStyle? textStyle,
     TextStyle? titleStyle,
+    required this.id,
     SliderThemeData? sliderThemeData,
   })  : _onLoad = onLoad,
-        _showTitle = showTitle,
         _track = null,
         _enabled = enabled,
-        _backgroundColor =
-            (backgroundColor == null) ? Color(0xFFFAF0E6) : backgroundColor,
-        _iconColor = iconColor,
-        _disabledIconColor = disabledIconColor,
-        _textStyle = textStyle,
-        _titleStyle = titleStyle,
-        _sliderThemeData = sliderThemeData;
-
-  ///
-  /// [SoundPlayerUI.fromTrack] Constructs a Playbar with a Track.
-  /// `track` is the Track that contains the audio to play.
-  ///
-  /// When the user clicks the play the audio held by the Track will
-  /// be played.
-  /// If `showTitle` is true (default is false) then the play bar will also
-  /// display the track name and album (if set).
-  /// If `enabled` is true (the default) then the Player will be enabled.
-  /// If `enabled` is false then the player will be disabled and the user
-  /// will not be able to click the play button.
-  /// The `audioFocus` allows you to control what happens to other
-  /// media that is playing when our player starts.
-  /// By default we use 'AudioFocus.focusAndHushOthers` which will
-  /// reduce the volume of any other players.
-  SoundPlayerUI.fromTrack(
-    Track track, {
-    bool showTitle = false,
-    bool enabled = true,
-    AudioFocus audioFocus = AudioFocus.requestFocusAndKeepOthers,
-    Color? backgroundColor,
-    Color iconColor = Colors.black,
-    Color disabledIconColor = Colors.grey,
-    TextStyle? textStyle,
-    TextStyle? titleStyle,
-    SliderThemeData? sliderThemeData,
-  })  : _track = track,
-        _showTitle = showTitle,
-        _onLoad = null,
-        _enabled = enabled,
-        _backgroundColor = backgroundColor,
+        _backgroundColor = (backgroundColor == null) ? Color(0xFFFAF0E6) : backgroundColor,
         _iconColor = iconColor,
         _disabledIconColor = disabledIconColor,
         _textStyle = textStyle,
@@ -161,13 +106,13 @@ class SoundPlayerUI extends StatefulWidget {
       _track,
       _onLoad,
       enabled: _enabled,
-      backgroundColor:
-          (_backgroundColor != null) ? _backgroundColor : Color(0xFFFAF0E6),
+      backgroundColor: (_backgroundColor != null) ? _backgroundColor : Color(0xFFFAF0E6),
       iconColor: _iconColor,
       disabledIconColor: _disabledIconColor,
       textStyle: _textStyle,
       titleStyle: _titleStyle,
       sliderThemeData: _sliderThemeData,
+      id: id,
     );
   }
 }
@@ -215,13 +160,11 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
 
   final Color? _disabledIconColor;
 
-  final TextStyle? _textStyle;
-
-  final TextStyle? _titleStyle;
-
   StreamSubscription? _playerSubscription; // ignore: cancel_subscriptions
 
   final SliderThemeData? _sliderThemeData;
+
+  final String id;
 
   ///
   SoundPlayerUIState(
@@ -234,14 +177,14 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
     TextStyle? textStyle,
     TextStyle? titleStyle,
     SliderThemeData? sliderThemeData,
-  })  : _player = FlutterSoundPlayer(),
+    required String id,
+  })  : _player = FlutterSoundPlayer(id: id),
         _enabled = enabled,
         _backgroundColor = backgroundColor,
         _iconColor = iconColor,
         _disabledIconColor = disabledIconColor,
-        _textStyle = textStyle,
-        _titleStyle = titleStyle,
         _sliderThemeData = sliderThemeData,
+        id = id,
         _localController = StreamController<PlaybackDisposition>.broadcast() {
     _sliderPosition.position = Duration(seconds: 0);
     _sliderPosition.maxPosition = Duration(seconds: 0);
@@ -287,17 +230,14 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
   ///
   @override
   Widget build(BuildContext context) {
-    registerPlayer(context, this);
-    return ChangeNotifierProvider<_SliderPosition>(
-        create: (_) => _sliderPosition, child: _buildPlayBar());
+    current.registerPlayer(context, this);
+    return ChangeNotifierProvider<_SliderPosition>(create: (_) => _sliderPosition, child: _buildPlayBar());
   }
 
   void _setCallbacks() {
     /// TODO
     /// should we chain these events in case the user of our api
     /// also wants to see these events?
-    //_player.onStarted = ({wasUser}) => _onStarted();
-    //_player.onStopped = ({wasUser}) => _onStopped();
 
     /// pipe the new sound players stream to our local controller.
     _player!.dispositionStream()!.listen(_localController.add);
@@ -325,7 +265,7 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
   /// When recording starts we are attached to the recorderStream.
   /// When recording finishes this method is called with a null and we
   /// revert to the [_player]'s stream.
-  ///
+
   void connectRecorderStream(Stream<PlaybackDisposition>? recorderStream) {
     if (recorderStream != null) {
       recorderStream.listen(_localController.add);
@@ -345,37 +285,28 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
   }
 
   Widget _buildPlayBar() {
-    var rows = <Widget>[];
-    rows.add(Row(children: [_buildDuration(), _buildSlider()]));
-    if (widget._showTitle && _track != null) rows.add(_buildTitle());
-
     return Container(
-        //height: 70,
-        decoration: BoxDecoration(
-            color: _backgroundColor,
-            borderRadius: BorderRadius.circular(SoundPlayerUI._barHeight / 2)),
-        child: Row(children: [
+      height: 40,
+      decoration:
+          BoxDecoration(color: _backgroundColor, borderRadius: BorderRadius.circular(SoundPlayerUI._barHeight / 2)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
           SizedBox(
-            width: 20,
+            width: 8,
           ),
-          _buildPlayButton(),
+          _buildPlayButton(id),
           SizedBox(
-            height: 50,
-            width: 30,
-            child: InkWell(
-              onTap: _player!.isPaused
-                  ? resume
-                  : _player!.isPlaying
-                      ? pause
-                      : null,
-              child: Icon(
-                _player!.isPaused ? Icons.play_arrow : Icons.pause,
-                color: _player!.isStopped ? _disabledIconColor : _iconColor,
-              ),
-            ),
+            width: 8,
           ),
-          Expanded(child: Column(children: rows))
-        ]));
+          _buildSlider(),
+          SizedBox(
+            width: 8,
+          ),
+        ],
+      ),
+    );
   }
 
   /// Returns the players current state.
@@ -424,19 +355,17 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
       case _PlayState.stopped:
         play();
         break;
-
       case _PlayState.playing:
         // stop the player
-        _stop();
+        pause();
         break;
       case _PlayState.paused:
         // stop the player
-        _stop();
-
+        resume();
         break;
       case _PlayState.disabled:
         // shouldn't be possible as play button is disabled.
-        _stop();
+        stop();
         break;
     }
   }
@@ -449,10 +378,7 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
       _playState = _PlayState.playing;
     });
 
-    _player!
-        .resumePlayer()
-        .then((_) => _transitioning = false)
-        .catchError((dynamic e) {
+    _player!.resumePlayer().then((_) => _transitioning = false).catchError((dynamic e) {
       _logger.w('Error calling resume ${e.toString()}');
       _playState = _PlayState.stopped;
       _player!.stopPlayer();
@@ -469,10 +395,7 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
       _playState = _PlayState.paused;
     });
 
-    _player!
-        .pausePlayer()
-        .then((_) => _transitioning = false)
-        .catchError((dynamic e) {
+    _player!.pausePlayer().then((_) => _transitioning = false).catchError((dynamic e) {
       _logger.w('Error calling pause ${e.toString()}');
       _playState = _PlayState.playing;
       _playState = _PlayState.stopped;
@@ -523,9 +446,7 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
   void _start() async {
     var trck = _track;
     if (trck != null) {
-      await _player!
-          .startPlayerFromTrack(trck, whenFinished: _onStopped)
-          .then((_) {
+      await _player!.startPlayerFromTrack(trck, whenFinished: _onStopped).then((_) {
         _playState = _PlayState.playing;
         onPlaybackStart(context);
       }).catchError((dynamic e) {
@@ -597,64 +518,67 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
 
   /// Build the play button which includes the loading spinner and pause button
   ///
-  Widget _buildPlayButton() {
+  Widget _buildPlayButton(String id) {
     Widget? button;
 
     if (_loading == true) {
       button = Container(
-          // margin: const EdgeInsets.only(top: 5.0, bottom: 5),
-
-          /// use a tick builder so we don't show the spinkit unless
-          /// at least 100ms has passed. This stops a little flicker
-          /// of the spiner caused by the default loading state.
-          child:
-
-              // return SpinKitRing(color: Colors.purple, size: 32);
-              StreamBuilder<PlaybackDisposition>(
-                  stream: _localController.stream,
-                  initialData: PlaybackDisposition(
-                      duration: Duration.zero, position: Duration.zero),
-                  builder: (context, asyncData) {
-                    return Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child:
-                          CircularProgressIndicator(strokeWidth: 5, value: 0.0),
-                    );
-                  }));
+        /// use a tick builder so we don't show the spinkit unless
+        /// at least 100ms has passed. This stops a little flicker
+        /// of the spiner caused by the default loading state.
+        child: StreamBuilder<PlaybackDisposition>(
+          stream: _localController.stream,
+          initialData: PlaybackDisposition(
+            id: id,
+            duration: Duration(seconds: 0),
+            position: Duration(seconds: 0),
+          ),
+          builder: (context, asyncData) {
+            return Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: CircularProgressIndicator(strokeWidth: 5, value: 0.0),
+            );
+          },
+        ),
+      );
     } else {
       button = _buildPlayButtonIcon(button);
     }
     return Container(
-        width: 30,
-        //height: 30,
-        child: Padding(
-            padding: EdgeInsets.only(left: 0, right: 0),
-            child: FutureBuilder<bool>(
-                future: canPlay,
-                builder: (context, asyncData) {
-                  var _canPlay = false;
-                  if (asyncData.connectionState == ConnectionState.done) {
-                    _canPlay = asyncData.data! && !__transitioning;
-                  }
+      width: 30,
+      child: FutureBuilder<bool>(
+        future: canPlay,
+        builder: (context, asyncData) {
+          var _canPlay = false;
+          if (asyncData.connectionState == ConnectionState.done) {
+            _canPlay = asyncData.data! && !__transitioning;
+          }
 
-                  return InkWell(
-                      onTap: _canPlay &&
-                              (_playState == _PlayState.stopped ||
-                                  _playState == _PlayState.playing ||
-                                  _playState == _PlayState.paused)
-                          ? () {
-                              return _onPlay(context);
-                            }
-                          : null,
-                      child: button);
-                })));
+          return Theme(
+            data: ThemeData(
+              splashColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+            ),
+            child: InkWell(
+              onTap: _canPlay &&
+                      (_playState == _PlayState.stopped ||
+                          _playState == _PlayState.playing ||
+                          _playState == _PlayState.paused)
+                  ? () {
+                      return _onPlay(context);
+                    }
+                  : null,
+              child: button,
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Widget _buildPlayButtonIcon(Widget? widget) {
     if (_playState == _PlayState.disabled) {
-      widget = _GrayedOut(
-          grayedOut: true,
-          child: widget = Icon(Icons.play_arrow, color: _disabledIconColor));
+      widget = _GrayedOut(grayedOut: true, child: widget = Icon(Icons.play_arrow, color: _disabledIconColor));
     } else {
       widget = FutureBuilder<bool>(
           future: canPlay,
@@ -663,31 +587,12 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
             if (asyncData.connectionState == ConnectionState.done) {
               canPlay = asyncData.data;
             }
-            return Icon(_player!.isStopped ? Icons.play_arrow : Icons.stop,
+            return Icon(_player!.isStopped || _player!.isPaused ? Icons.play_arrow : Icons.stop,
                 color: canPlay! ? _iconColor : _disabledIconColor);
           });
     }
     //break;
-    return SizedBox(height: 50, width: 30, child: widget);
-  }
-
-  Widget _buildDuration() {
-    return StreamBuilder<PlaybackDisposition>(
-        stream: _localController.stream,
-        initialData: PlaybackDisposition.zero(),
-        builder: (context, snapshot) {
-          var disposition = snapshot.data!;
-          var durationDate = DateTime.fromMillisecondsSinceEpoch(
-              disposition.duration.inMilliseconds,
-              isUtc: true);
-          var positionDate = DateTime.fromMillisecondsSinceEpoch(
-              disposition.position.inMilliseconds,
-              isUtc: true);
-          return Text(
-            '${positionDate.minute.toString().padLeft(2, '0')}:${positionDate.second.toString().padLeft(2, '0')} / ${durationDate.minute.toString().padLeft(2, '0')}:${durationDate.second.toString().padLeft(2, '0')}',
-            style: _textStyle,
-          );
-        });
+    return SizedBox(height: 40, width: 24, child: widget);
   }
 
   //'${Format.duration(disposition.position, showSuffix: false)}'
@@ -719,36 +624,8 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
         }
       },
       _sliderThemeData,
+      id,
     ));
-  }
-
-  Widget _buildTitle() {
-    var columns = <Widget>[];
-
-    if (_track!.trackTitle != null) {
-      columns.add(Text(
-        _track!.trackTitle!,
-        style: _titleStyle,
-      ));
-    }
-    if (_track!.trackTitle != null && _track!.trackAuthor != null) {
-      columns.add(Text(
-        ' / ',
-        style: _titleStyle,
-      ));
-    }
-    if (_track!.trackAuthor != null) {
-      columns.add(Text(
-        _track!.trackAuthor!,
-        style: _titleStyle,
-      ));
-    }
-    return _track!.trackTitle != null || _track!.trackAuthor != null
-        ? Container(
-            margin: EdgeInsets.only(bottom: 5),
-            child: Row(children: columns),
-          )
-        : SizedBox();
   }
 }
 
@@ -787,13 +664,11 @@ class _GrayedOut extends StatelessWidget {
   final double opacity;
 
   ///
-  _GrayedOut({required this.child, this.grayedOut = true})
-      : opacity = grayedOut == true ? 0.3 : 1.0;
+  _GrayedOut({required this.child, this.grayedOut = true}) : opacity = grayedOut == true ? 0.3 : 1.0;
 
   @override
   Widget build(BuildContext context) {
-    return AbsorbPointer(
-        absorbing: grayedOut, child: Opacity(opacity: opacity, child: child));
+    return AbsorbPointer(absorbing: grayedOut, child: Opacity(opacity: opacity, child: child));
   }
 }
 
@@ -806,23 +681,36 @@ class PlaybarSlider extends StatefulWidget {
 
   final SliderThemeData? _sliderThemeData;
 
+  final String id;
+
   ///
   PlaybarSlider(
     this.stream,
     this._seek,
     this._sliderThemeData,
+    this.id,
   );
 
   @override
   State<StatefulWidget> createState() {
-    return _PlaybarSliderState();
+    return _PlaybarSliderState(id);
   }
 }
 
 ///
 class _PlaybarSliderState extends State<PlaybarSlider> {
+  final String id;
+  late PlaybackDisposition prevData;
+
+  _PlaybarSliderState(this.id);
+
   @override
   Widget build(BuildContext context) {
+    prevData = PlaybackDisposition(
+      id: id,
+      duration: Duration(seconds: 0),
+      position: Duration(seconds: 0),
+    );
     SliderThemeData? sliderThemeData;
     if (widget._sliderThemeData == null) {
       sliderThemeData = SliderTheme.of(context);
@@ -830,23 +718,35 @@ class _PlaybarSliderState extends State<PlaybarSlider> {
       sliderThemeData = widget._sliderThemeData;
     }
     return SliderTheme(
-        data: sliderThemeData!.copyWith(
-          thumbShape: RoundSliderThumbShape(enabledThumbRadius: 6.0),
-          //thumbColor: Colors.amber,
-          //inactiveTrackColor: Colors.green,
+      data: sliderThemeData!.copyWith(
+        thumbShape: RoundSliderThumbShape(enabledThumbRadius: 6.0),
+      ),
+      child: StreamBuilder<PlaybackDisposition>(
+        stream: widget.stream,
+        initialData: PlaybackDisposition(
+          id: id,
+          duration: Duration(seconds: 0),
+          position: Duration(seconds: 0),
         ),
-        child: StreamBuilder<PlaybackDisposition>(
-            stream: widget.stream,
-            initialData: PlaybackDisposition.zero(),
-            builder: (context, snapshot) {
-              var disposition = snapshot.data!;
-              return Slider(
-                max: disposition.duration.inMilliseconds.toDouble(),
-                value: disposition.position.inMilliseconds.toDouble(),
-                onChanged: (value) =>
-                    widget._seek(Duration(milliseconds: value.toInt())),
-              );
-            }));
+        builder: (context, snapshot) {
+          var disposition = snapshot.data!;
+          if (disposition.id == id) {
+            prevData = disposition;
+            return Slider(
+              max: disposition.duration.inMilliseconds.toDouble(),
+              value: disposition.position.inMilliseconds.toDouble(),
+              onChanged: (value) => widget._seek(Duration(milliseconds: value.toInt())),
+            );
+          }
+
+          return Slider(
+            max: prevData.duration.inMilliseconds.toDouble(),
+            value: prevData.position.inMilliseconds.toDouble(),
+            onChanged: (value) => widget._seek(Duration(milliseconds: value.toInt())),
+          );
+        },
+      ),
+    );
   }
 }
 

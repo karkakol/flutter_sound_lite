@@ -12,10 +12,10 @@
 @import audio_session;
 #endif
 
-#if __has_include(<flutter_sound/FlutterSound.h>)
-#import <flutter_sound/FlutterSound.h>
+#if __has_include(<flutter_sound_lite/FlutterSound.h>)
+#import <flutter_sound_lite/FlutterSound.h>
 #else
-@import flutter_sound;
+@import flutter_sound_lite;
 #endif
 
 #if __has_include(<just_audio/JustAudioPlugin.h>)
@@ -24,10 +24,10 @@
 @import just_audio;
 #endif
 
-#if __has_include(<path_provider/FLTPathProviderPlugin.h>)
-#import <path_provider/FLTPathProviderPlugin.h>
+#if __has_include(<path_provider_ios/FLTPathProviderPlugin.h>)
+#import <path_provider_ios/FLTPathProviderPlugin.h>
 #else
-@import path_provider;
+@import path_provider_ios;
 #endif
 
 #if __has_include(<permission_handler/PermissionHandlerPlugin.h>)
