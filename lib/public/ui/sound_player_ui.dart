@@ -185,7 +185,7 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
         _disabledIconColor = disabledIconColor,
         _sliderThemeData = sliderThemeData,
         id = id,
-        _localController = StreamController<PlaybackDisposition>.broadcast() {
+        _localController = StreamController<PlaybackDisposition>() {
 
     _sliderPosition.position = Duration(seconds: 0);
     _sliderPosition.maxPosition = Duration(seconds: 0);
@@ -474,7 +474,6 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
   ///
   Future<void> _stop({bool supressState = false}) async {
     if (_player!.isPlaying || _player!.isPaused) {
-      await _localController.close();
       onPlaybackEnd(context);
       await _player!.stopPlayer().then<void>((_) {
         if (_playerSubscription != null) {
